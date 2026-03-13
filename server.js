@@ -12,7 +12,6 @@ app.get("/zalo/webhook", (req, res) => {
 });
 
 app.post("/zalo/webhook", async (req, res) => {
-
   const message = req.body.message?.text;
   const userId = req.body.sender?.id;
 
@@ -21,7 +20,6 @@ app.post("/zalo/webhook", async (req, res) => {
   }
 
   try {
-
     const dify = await axios.post(
       "https://api.dify.ai/v1/chat-messages",
       {
@@ -48,19 +46,21 @@ app.post("/zalo/webhook", async (req, res) => {
       },
       {
         headers: {
-          access_token: ZALO_TOKEN
+          access_token: ZALO_TOKEN,
+          "Content-Type": "application/json"
         }
       }
     );
 
   } catch (err) {
-    console.log(err);
+    console.log(err.response?.data || err.message);
   }
 
   res.sendStatus(200);
-
 });
 
-app.listen(3000, () => {
-  console.log("server running");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`server running on ${PORT}`);
 });
