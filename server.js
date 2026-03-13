@@ -7,6 +7,10 @@ app.use(express.json());
 const DIFY_API_KEY = process.env.DIFY_API_KEY;
 const ZALO_TOKEN = process.env.ZALO_TOKEN;
 
+app.get("/zalo/webhook", (req, res) => {
+  res.status(200).send("OK");
+});
+
 app.post("/zalo/webhook", async (req, res) => {
 
   const message = req.body.message?.text;
