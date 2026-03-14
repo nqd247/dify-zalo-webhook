@@ -1,24 +1,39 @@
+import express from "express"
+
+const app = express()
+app.use(express.json())
+
+// test route
+app.get("/", (req, res) => {
+  res.send("ShopQR Zalo AI Webhook running")
+})
+
 app.post("/zalo/webhook", async (req, res) => {
   try {
-    console.log("==== ZALO WEBHOOK RECEIVED ====");
-    console.log("RAW BODY:", JSON.stringify(req.body, null, 2));
+    console.log("==== ZALO WEBHOOK RECEIVED ====")
+    console.log(JSON.stringify(req.body, null, 2))
 
-    const body = req.body;
+    const body = req.body
+
     const userId =
       body?.sender?.id ||
       body?.sender?.user_id ||
       body?.data?.sender?.id ||
       body?.data?.sender?.user_id ||
-      null;
+      null
 
-    console.log("Parsed userId:", userId);
+    const messageText =
+      body?.message?.text ||
+      body?.data?.message?.text ||
+      ""
 
-    res.status(200).send("ok");
+    console.log("userId:", userId)
+    console.log("message:", messageText)
 
-    if (!userId) {
-      console.log("No userId found");
-      return;
-    }
+    // trả 200 ngay cho Zalo
+    res.status(200).send("ok")
+
+    if (!userId) return
 
     const response = await fetch("https://openapi.zalo.me/v2.0/oa/message", {
       method: "POST",
@@ -28,14 +43,20 @@ app.post("/zalo/webhook", async (req, res) => {
       },
       body: JSON.stringify({
         recipient: { user_id: String(userId) },
-        message: { text: "ShopQR AI đã nhận tin nhắn của anh/chị." }
+        message: { text: "ShopQR AI đã nhận tin nhắn." }
       })
-    });
+    })
 
-    const data = await response.json();
-    console.log("ZALO REPLY RESULT:", JSON.stringify(data, null, 2));
-  } catch (e) {
-    console.error("WEBHOOK ERROR:", e);
-    if (!res.headersSent) res.status(200).send("ok");
+    const data = await response.json()
+
+    console.log("ZALO REPLY RESULT:", data)
+
+  } catch (err) {
+    console.error("Webhook error:", err)
   }
-});
+})
+
+const PORT = process.env.PORT || 8080
+app.listen(PORT, () => {
+  console.log("Server running on port", PORT)
+})
