@@ -1,7 +1,14 @@
+import express from "express";
+
+const app = express();
+app.use(express.json());
+
+const PORT = process.env.PORT || 3000;
+
 app.post("/zalo/webhook", async (req, res) => {
   try {
     console.log("==== ZALO WEBHOOK RECEIVED ====");
-    console.log("RAW BODY:", JSON.stringify(req.body, null, 2));
+    console.log(JSON.stringify(req.body, null, 2));
 
     const body = req.body;
 
@@ -10,7 +17,6 @@ app.post("/zalo/webhook", async (req, res) => {
       body?.sender?.user_id ||
       body?.data?.sender?.id ||
       body?.data?.sender?.user_id ||
-      body?.source?.uid ||
       null;
 
     const messageText =
@@ -18,16 +24,12 @@ app.post("/zalo/webhook", async (req, res) => {
       body?.data?.message?.text ||
       "";
 
-    console.log("Parsed userId:", userId);
-    console.log("Parsed messageText:", messageText);
+    console.log("User:", userId);
+    console.log("Message:", messageText);
 
-    // trả 200 ngay cho Zalo
     res.status(200).send("ok");
 
-    if (!userId) {
-      console.log("No userId found");
-      return;
-    }
+    if (!userId) return;
 
     const response = await fetch("https://openapi.zalo.me/v2.0/oa/message", {
       method: "POST",
@@ -36,15 +38,19 @@ app.post("/zalo/webhook", async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        recipient: { user_id: String(userId) },
-        message: { text: "ShopQR AI đã nhận tin nhắn của anh/chị." }
+        recipient: { user_id: userId },
+        message: { text: "ShopQR AI đã nhận tin nhắn của bạn." }
       })
     });
 
     const data = await response.json();
-    console.log("ZALO REPLY RESULT:", JSON.stringify(data, null, 2));
+    console.log("Zalo reply:", data);
+
   } catch (err) {
-    console.error("WEBHOOK ERROR:", err);
-    if (!res.headersSent) res.status(200).send("ok");
+    console.error("Webhook error:", err);
   }
+});
+
+app.listen(PORT, () => {
+  console.log("Server running on port", PORT);
 });
