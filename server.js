@@ -1,21 +1,22 @@
-const express = require("express");
-const fetch = require("node-fetch");
-const path = require("path");
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ===== ENV =====
-const DIFY_API_URL = process.env.DIFY_API_URL || "https://api.dify.ai/v1/chat-messages";
+const DIFY_API_URL =
+  process.env.DIFY_API_URL || "https://api.dify.ai/v1/chat-messages";
 const DIFY_API_KEY = process.env.DIFY_API_KEY || "";
 const ZALO_OA_ACCESS_TOKEN = process.env.ZALO_OA_ACCESS_TOKEN || "";
 
-// ===== MIDDLEWARE =====
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// ===== BASIC ROUTES =====
 app.get("/", (req, res) => {
   res.status(200).send("ShopQR AI server running");
 });
@@ -28,7 +29,6 @@ app.get("/health", (req, res) => {
   });
 });
 
-// ===== HELPER: extract message from Zalo webhook payload =====
 function extractZaloMessage(body) {
   try {
     const userId =
@@ -43,7 +43,7 @@ function extractZaloMessage(body) {
       body?.message?.text ||
       body?.data?.message?.text ||
       body?.text ||
-      body?.message ||
+      (typeof body?.message === "string" ? body.message : null) ||
       null;
 
     return {
@@ -52,14 +52,10 @@ function extractZaloMessage(body) {
     };
   } catch (error) {
     console.error("extractZaloMessage error:", error);
-    return {
-      userId: null,
-      messageText: null,
-    };
+    return { userId: null, messageText: null };
   }
 }
 
-// ===== HELPER: call Dify =====
 async function askDify(query, userId) {
   if (!DIFY_API_KEY) {
     throw new Error("Missing DIFY_API_KEY");
@@ -88,7 +84,6 @@ async function askDify(query, userId) {
   return data?.answer || "ShopQR đã nhận được tin nhắn của anh/chị.";
 }
 
-// ===== HELPER: reply to Zalo =====
 async function sendZaloTextMessage(userId, text) {
   if (!ZALO_OA_ACCESS_TOKEN) {
     throw new Error("Missing ZALO_OA_ACCESS_TOKEN");
@@ -123,7 +118,6 @@ async function sendZaloTextMessage(userId, text) {
   return data;
 }
 
-// ===== OPTIONAL: GET webhook for manual testing =====
 app.get("/zalo/webhook", (req, res) => {
   res.status(200).json({
     status: "ok",
@@ -131,7 +125,6 @@ app.get("/zalo/webhook", (req, res) => {
   });
 });
 
-// ===== MAIN WEBHOOK =====
 app.post("/zalo/webhook", async (req, res) => {
   try {
     console.log("==== ZALO WEBHOOK RECEIVED ====");
@@ -142,13 +135,10 @@ app.post("/zalo/webhook", async (req, res) => {
     console.log("Parsed userId:", userId);
     console.log("Parsed messageText:", messageText);
 
-    // Always respond 200 quickly if payload is not a text message
     if (!userId || !messageText) {
-      console.log("No valid text message found. Return 200.");
       return res.status(200).send("ok");
     }
 
-    // Acknowledge webhook early
     res.status(200).send("ok");
 
     let answer = "";
@@ -171,14 +161,12 @@ app.post("/zalo/webhook", async (req, res) => {
   } catch (error) {
     console.error("Webhook unexpected error:", error);
 
-    // If headers not sent yet, still return 200 to avoid webhook retries storm
     if (!res.headersSent) {
       return res.status(200).send("ok");
     }
   }
 });
 
-// ===== START =====
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
