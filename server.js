@@ -31,21 +31,24 @@ app.post("/zalo/webhook", async (req, res) => {
 
     if (!userId) return;
 
-    const response = await fetch("https://openapi.zalo.me/v2.0/oa/message", {
+    const response = await fetch("https://openapi.zalo.me/v3.0/oa/message/cs", {
       method: "POST",
       headers: {
         access_token: process.env.ZALO_OA_ACCESS_TOKEN,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        recipient: { user_id: userId },
-        message: { text: "ShopQR AI đã nhận tin nhắn của bạn." }
+        recipient: {
+          user_id: String(userId)
+        },
+        message: {
+          text: "ShopQR AI đã nhận tin nhắn của anh/chị."
+        }
       })
     });
 
     const data = await response.json();
-    console.log("Zalo reply:", data);
-
+    console.log("Zalo reply:", JSON.stringify(data, null, 2));
   } catch (err) {
     console.error("Webhook error:", err);
   }
