@@ -7,6 +7,10 @@ app.use(express.json());
 const DIFY_API_KEY = process.env.DIFY_API_KEY;
 const ZALO_TOKEN = process.env.ZALO_TOKEN;
 
+app.get("/zalo_verifierJksz5esQF2XaxPODakS505F1qZ-_jmPeD3Cq.html", (req,res)=>{
+  res.send("zalo-platform-site-verification=Jksz5esQF2XaxPODakS505F1qZ-_jmPeD3Cq");
+});
+
 app.get("/zalo/webhook", (req, res) => {
   res.status(200).send("OK");
 });
